@@ -1,0 +1,33 @@
+"0","train$year <- substr(train$date, 7, 10)
+train$year <- as.numeric(train$year)
+train$month <- substr(train$date, 4, 5)
+train$month <- as.numeric(train$month)
+train$date <- as.Date(train$date, ""%d.%m.%Y"")
+sapply(train, class)
+"
+"1","          date "
+"1","date_block_num "
+"1","       shop_id "
+"1","       item_id "
+"1","    item_price "
+"1","
+"
+"1","        ""Date"" "
+"1","     ""integer"" "
+"1","     ""integer"" "
+"1","     ""integer"" "
+"1","     ""numeric"" "
+"1","
+"
+"1","  item_cnt_day "
+"1","          year "
+"1","         month "
+"1","
+"
+"1","     ""numeric"" "
+"1","     ""numeric"" "
+"1","     ""numeric"" "
+"1","
+"
+"0","train_month <- aggregate(item_cnt_day ~ year + month + date_block_num + shop_id + item_id,"
+"0","                              data = train, FUN=sum)"

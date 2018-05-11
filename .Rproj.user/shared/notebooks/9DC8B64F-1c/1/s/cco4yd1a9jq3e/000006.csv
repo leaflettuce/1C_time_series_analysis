@@ -1,0 +1,6 @@
+"0","for (i in 1:nrow(train_month)){
+  train_month[i,7] = 34
+}
+"
+"2","
+"

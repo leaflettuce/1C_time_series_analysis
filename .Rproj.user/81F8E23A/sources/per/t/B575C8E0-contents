@@ -1,0 +1,98 @@
+---
+title: "time_series_analysis"
+output: html_document
+---
+
+(SUMMARY HERE)
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Time Series Analysis in R
+Exploring daily sales data of software firm 1C. This dataset was obtained from Kaggle and is used for the final project of the Coursera "How to win a data science competition" coutse.  NOTE: I did not take this course!
+
+First to import the data and see how it looks:
+
+
+```{r import}
+#train data
+train <- read.csv('data/train.csv', stringsAsFactors = FALSE)
+
+#test data & Kaggle sample sub
+test <- read.csv('data/test.csv')
+sample_sub <- read.csv('data/sample_submission.csv')
+
+#additional data included
+items <- read.csv('data/items.csv')
+categories <- read.csv('data/item_categories.csv')
+shops <- read.csv("data/shops.csv")
+```
+
+## Describe the datasets
+
+Initial exploration to check data types, sizes, etc. 
+
+```{r explore}
+dim(train)
+head(train)
+
+dim(test)
+head(test)
+
+head(sample_sub)
+
+```
+
+So, looks as if we're to predict the 'item_cnt_month' based upon 'shop_id' and 'item_id'.. A few things this informs us:
+
+Need to craft a 'daily sales'item_cnt_day' varible in the train set into a monthly sale count to have an appropriate dependant variable for model fitting. This should be done by  
+  
+  -Aggregate daily sales into monthy, split by shop_id and item_id.
+
+Once this is done, we have two other variables of interest in the train:
+  -date :  we'll perform some time-series analysis here
+  -price: I'm, sure there is some coreelation between this and monthly sales.
+  
+So, first step is to create the monthly sales variable in train per shop/item. After this, we should create a second dataset of only item_id and price so as to add this var to the test as I expect it'll be needed. Then we'll explore trends and seasonality in the time-series.
+
+```{r set_dependent}
+#First set year variable and edit typeas
+train$year <- substr(train$date, 7, 10)
+train$year <- as.numeric(train$year)
+
+train$month <- substr(train$date, 4, 5)
+train$month <- as.numeric(train$month)
+
+train$date <- as.Date(train$date, "%d.%m.%Y")
+
+sapply(train, class)
+
+train_month <- aggregate(item_cnt_day ~ year + month + date_block_num + shop_id + item_id,
+                              data = train, FUN=sum)
+
+names(train_month)[names(train_month) == 'item_cnt_day'] <- 'item_cnt_month'
+```
+
+Should have done this first probably :/  lets check for missing values real quick.
+
+```{r}
+sapply(train, function(x) sum(is.na(x)))
+
+```
+
+Love Kaggle for that.  Lets divert from the train for a second and add the next block count, year, and month to the test set.  We know it's the next year/month occuring right after the end of the train set, which is october 2015.
+
+```{r}
+for (i in 1:nrow(test)){
+  test[i,4] = 34
+  test[i, 5] = 2015
+  test[i, 6] = 11
+}
+
+colnames(test)[4:6] <- c('date_block_num', 'year', 'month')
+
+
+
+```

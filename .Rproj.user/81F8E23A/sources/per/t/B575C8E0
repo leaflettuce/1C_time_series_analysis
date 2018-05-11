@@ -1,0 +1,24 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1526050800798.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3095089242",
+    "id" : "B575C8E0",
+    "lastKnownWriteTime" : 1526057679,
+    "last_content_update" : 1526057679070,
+    "path" : "D:/Projects/kaggle/time_series/1c.Rmd",
+    "project_path" : "1c.Rmd",
+    "properties" : {
+        "cursorPosition" : "98,0",
+        "last_setup_crc32" : "C33ED0C5bb338d19",
+        "scrollLine" : "84",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

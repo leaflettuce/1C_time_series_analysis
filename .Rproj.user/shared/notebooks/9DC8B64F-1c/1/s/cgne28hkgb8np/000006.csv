@@ -1,4 +1,0 @@
-"0","train <- read.csv('data/train.csv'stringsAsFactors = FALSE)
-"
-"2","Error: unexpected symbol in ""train <- read.csv('data/train.csv'stringsAsFactors""
-"

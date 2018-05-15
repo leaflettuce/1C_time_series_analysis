@@ -8,6 +8,8 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+
 ```
 
 ##Time Series Analysis in R
@@ -55,7 +57,7 @@ Once this is done, we have two other variables of interest in the train:
   -date :  we'll perform some time-series analysis here
   -price: I'm, sure there is some coreelation between this and monthly sales.
   
-So, first step is to create the monthly sales variable in train per shop/item. After this, we should create a second dataset of only item_id and price so as to add this var to the test as I expect it'll be needed. Then we'll explore trends and seasonality in the time-series.
+So, first step is to create the monthly sales variable in train per shop/item. Then we can explore trends and seasonality in the time-series.
 
 ```{r set_dependent}
 #First set year variable and edit typeas
@@ -93,6 +95,15 @@ for (i in 1:nrow(test)){
 
 colnames(test)[4:6] <- c('date_block_num', 'year', 'month')
 
+```
 
+So we have a train dataset of 'train_month' and test is updated with necessary information. While I imagine we could work on feature generation or bring in the category/item datasets here to add accuracy to the fit, I'm going to focus on normalizing the time-series first and picking our trend/seasonality. 
+```{r}
+
+
+```
+
+##Season Decomposition
+```{r}
 
 ```

@@ -6,10 +6,11 @@ output: html_document
 (SUMMARY HERE)
 
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, eval = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
-
+library(tidyverse)
+library(xts)
+library(lubridate)
 ```
 
 ##Time Series Analysis in R
@@ -70,11 +71,6 @@ train$month <- as.numeric(train$month)
 train$date <- as.Date(train$date, "%d.%m.%Y")
 
 sapply(train, class)
-
-train_month <- aggregate(item_cnt_day ~ year + month + date_block_num + shop_id + item_id,
-                              data = train, FUN=sum)
-
-names(train_month)[names(train_month) == 'item_cnt_day'] <- 'item_cnt_month'
 ```
 
 Should have done this first probably :/  lets check for missing values real quick.
@@ -87,8 +83,10 @@ sapply(train, function(x) sum(is.na(x)))
 Love Kaggle for that.  Lets divert from the train for a second and add the next block count, year, and month to the test set.  We know it's the next year/month occuring right after the end of the train set, which is october 2015.
 
 ```{r}
+date <- as.Date("01.11.2015", "%d.%m.%Y")
+
 for (i in 1:nrow(test)){
-  test[i,4] = 34
+  test[i,4] = 35
   test[i, 5] = 2015
   test[i, 6] = 11
 }
@@ -98,12 +96,18 @@ colnames(test)[4:6] <- c('date_block_num', 'year', 'month')
 ```
 
 So we have a train dataset of 'train_month' and test is updated with necessary information. While I imagine we could work on feature generation or bring in the category/item datasets here to add accuracy to the fit, I'm going to focus on normalizing the time-series first and picking our trend/seasonality. 
-```{r}
+```{r, eval = FALSE}
+#train$my <- floor_date(train$date, "month")
 
+df_train <- train %>% group_by(date_block_num, shop_id, item_id, year, month) %>% 
+  summarize(item_cnt_month = sum(item_cnt_day))
 
+df_train$shop_id = as.factor(df_train$shop_id)
+df_train$item_id = as.factor(df_train$item_id)
 ```
 
-##Season Decomposition
+##kill me
+
 ```{r}
 
 ```

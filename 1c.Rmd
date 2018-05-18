@@ -100,14 +100,26 @@ So we have a train dataset of 'train_month' and test is updated with necessary i
 #train$my <- floor_date(train$date, "month")
 
 df_train <- train %>% group_by(date_block_num, shop_id, item_id, year, month) %>% 
-  summarize(item_cnt_month = sum(item_cnt_day))
+  summarize(item_cnt_month = sum(item_cnt_day)) 
 
-df_train$shop_id = as.factor(df_train$shop_id)
-df_train$item_id = as.factor(df_train$item_id)
 ```
 
 ##kill me
 
 ```{r}
+basic <- df_train %>% group_by(shop_id, item_id) %>% 
+  summarize(mean_count = median(item_cnt_month)) 
 
+
+overall_mean <- mean(basic$mean_count)
+
+basic_test <- test %>% select(ID, shop_id, item_id)
+
+basic_test <- merge(x = basic_test, y = basic, by = c("shop_id", "item_id"), all.x = TRUE)
+basic_test$mean_count[is.na(basic_test$mean_count)] <- overall_mean
+
+preds = basic_test$mean_count
+sample_sub$item_cnt_month = preds
+
+write.csv(sample_sub, file = "D://projects/kaggle/time_series/basic_af.csv", row.names = FALSE)
 ```

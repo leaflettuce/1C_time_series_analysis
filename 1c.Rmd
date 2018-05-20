@@ -126,7 +126,7 @@ sample_sub$item_cnt_month = preds
 write.csv(sample_sub, file = "D://projects/kaggle/time_series/basic_af.csv", row.names = FALSE)
 ```
 
-So back to work on the time series.. lets figure out how toi set it up by exploring specific shop items.
+So back to work on the time series.. lets figure out how to set it up by exploring one or two specific shop-item combos.
 
 ```{r}
 ts_train <- train %>% group_by(date_block_num, shop_id, item_id) %>% 

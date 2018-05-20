@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(xts)
 library(lubridate)
+library(tseries)
 ```
 
 ##Time Series Analysis in R
@@ -139,9 +140,10 @@ ts_train <- train %>% group_by(date_block_num, shop_id, item_id) %>%
 ts_test <- subset(ts_train, ts_train$shop_id == 10 & ts_train$item_id == 1871)
 
 ts <- rnorm(34, m = 0, sd = 0)
-ts <- ts(ts, start = 0, end = 33, frequency = 1)
+ts <- ts(ts, start = 2013, frequency = 12)
 
-for (i in 1:33){
+
+for (i in 1:34){
   if(i %in% ts_test$date_block_num){
     j <- which(ts_test$date_block_num == i)
     num <- ts_test[j,4]
@@ -157,4 +159,52 @@ abline(reg = lm(ts~time(ts)))
 ```
 
 
-I'm going to focus on normalizing the time-series first and picking our trend/seasonality. 
+I'm going to focus on checking the time-series for trend/seasonality first. Performing ARIMA requires stationary data. lets make sure the cycle is correct.
+
+```{r}
+cycle(ts)
+```
+
+```{r}
+boxplot(ts~cycle(ts))
+
+```
+
+Hmmm   I'd argue that this specific shop-item combo doesn't quite need a model to accuracy predict... It's zero'd out the past two years and every month's median is 0.
+
+Variance remains the same so no need to log.. additional,  log doesn't act nicely with 0... Our sale items are dropping, but not quite negative infinity.
+
+
+```{r}
+adf.test(ts, alternative = "stationary", k = 0)
+adf.test(diff(ts), alternative="stationary", k=0)
+
+acf(ts)
+acf(diff(ts))
+```
+I'm voting on the differentiated version.  lets check PACF as well
+```{r}
+pacf(diff(ts))
+```
+
+
+Based on the plots, I think it looks like we have an ARIMA model setup of a 1 in auto-regession and 1 or 2 in moving average..  Lets go with the 2 here  so 
+
+AR, I, MA ->(1,1,2)
+
+```{r}
+fit112 <- arima(ts, order = c(1, 1, 2))
+
+pred112 <- predict(fit112)
+ts.plot(ts, pred112$pred, lty = c(1,3))
+pred112$pred
+```
+
+
+Aright.. its looks good.. an estimate of very  very very close to 0. Lets find a shop-item with more sales and see how this same setup does.
+
+```{r}
+
+```
+
+

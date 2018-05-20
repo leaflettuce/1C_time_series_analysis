@@ -95,7 +95,7 @@ colnames(test)[4:6] <- c('date_block_num', 'year', 'month')
 
 ```
 
-So we have a train dataset of 'train_month' and test is updated with necessary information. While I imagine we could work on feature generation or bring in the category/item datasets here to add accuracy to the fit, I'm going to focus on normalizing the time-series first and picking our trend/seasonality. 
+Lets also split out the needed data into a train set which accounts for monthly sales rather than daily.
 ```{r, eval = FALSE}
 #train$my <- floor_date(train$date, "month")
 
@@ -104,7 +104,9 @@ df_train <- train %>% group_by(date_block_num, shop_id, item_id, year, month) %>
 
 ```
 
-##kill me
+##Basic Median fit
+
+I fit fit and modeled the data based upon only the mean monthly sales per item per shop. Any NA's are filled with the median of monthly item sales throughout entire dataset... I call this the basic af model, and it's a nice one to set as a comparable to the future time-series..
 
 ```{r}
 basic <- df_train %>% group_by(shop_id, item_id) %>% 
@@ -123,3 +125,36 @@ sample_sub$item_cnt_month = preds
 
 write.csv(sample_sub, file = "D://projects/kaggle/time_series/basic_af.csv", row.names = FALSE)
 ```
+
+So back to work on the time series.. lets figure out how toi set it up by exploring specific shop items.
+
+```{r}
+ts_train <- train %>% group_by(date_block_num, shop_id, item_id) %>% 
+  summarize(item_cnt_month = sum(item_cnt_day))# %>%
+#  mutate(ts = xts(item_cnt_month, order.by = as.Date(ts_train$date)))
+
+
+
+### TRIAL HERE
+ts_test <- subset(ts_train, ts_train$shop_id == 10 & ts_train$item_id == 1871)
+
+ts <- rnorm(34, m = 0, sd = 0)
+ts <- ts(ts, start = 0, end = 33, frequency = 1)
+
+for (i in 1:33){
+  if(i %in% ts_test$date_block_num){
+    j <- which(ts_test$date_block_num == i)
+    num <- ts_test[j,4]
+    ts[i] <- as.numeric(num)
+  }
+}
+
+
+plot(ts)
+abline(reg = lm(ts~time(ts)))
+### END HERE
+
+```
+
+
+I'm going to focus on normalizing the time-series first and picking our trend/seasonality. 

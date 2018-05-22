@@ -349,7 +349,7 @@ NOTE: I came back to this after the first few submissions and gave exponential s
 ```{r}
 
 
-clipper<- function(preds, UB=15, LB=0) pmax( LB, pmin( preds, UB))
+clipper<- function(preds, UB=11, LB=0) pmax( LB, pmin( preds, UB))
 clipped_preds <- clipper(preds)
 
 print(preds[1])
@@ -365,7 +365,7 @@ sample_sub[1:10,]
 ```
 All thats left is to write it out for submission:
 ```{r}
-write.csv(sample_sub, file = "D://projects/kaggle/time_series/exp_smooth_tight-clip.csv", row.names = FALSE)
+write.csv(sample_sub, file = "D://projects/kaggle/time_series/exp_smooth_11_clip.csv", row.names = FALSE)
 ```
 
 ## Kaggle Results

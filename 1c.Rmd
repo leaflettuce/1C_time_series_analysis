@@ -324,12 +324,14 @@ get_preds <- function(){
     if (max(ts) <= 0){
       preds[i] <- 0
     }
+    
     else{
-    try(fit <- arima(ts, order = c(1, 1, 2), method = "ML"))  
+    #try(fit <- arima(ts, order = c(1, 1, 2), method = "ML"))  
       ##CHANGE THIS TO CHANGE MODEL
-
-    pred <- predict(fit)
-    preds[i] <- pred$pred
+      fit <- HoltWinters(ts, alpha = .35, beta = FALSE, gamma = FALSE)
+  
+      pred <- predict(fit)
+      preds[i] <- pred
     }
     
     if (i %% 1000 == 0){
@@ -341,6 +343,8 @@ get_preds()
 ```
 
 Alright, we should have a list of predictions from the ARIMA model.. Lets check a few then move them to their proper column in the sample submission from KAggle.
+
+NOTE: I came back to this after the first few submissions and gave exponential smoothing a try.. SO while my ARIMA is commented out, this was the primaryt exploration I performed.Exponential smoothing was slighltly better than ARIMA- (0.1 decrease in root mean square error)!
 
 ```{r}
 
@@ -356,16 +360,17 @@ for (i in 1:nrow(sample_sub)){
   sample_sub[i,2] <- clipped_preds[i]
 }
 
+#sample_sub$item_cnt_month <- round(sample_sub$item_cnt_month)
 sample_sub[1:10,]
 ```
 All thats left is to write it out for submission:
 ```{r}
-write.csv(sample_sub, file = "D://projects/kaggle/time_series/ARIMA_tight-clip.csv", row.names = FALSE)
+write.csv(sample_sub, file = "D://projects/kaggle/time_series/exp_smooth_tight-clip.csv", row.names = FALSE)
 ```
 
 ## Kaggle Results
 
-~52% of contestants.  I'm happy with it for my first time running a time series model. This model may also be running into trouble due to over-generalizing the auto-regressive and moving average values for each shop-item combo.. It's definately not the strongest for each individual combination. 
+~40% of contestants.  I'm happy with it for my first time running a time series model. This model may also be running into trouble due to over-generalizing the auto-regressive and moving average values for each shop-item combo.. It's definately not the strongest for each individual combination. 
 
-Regardless, I'm happy with it.  A root mean squared error of only 1.23 is pretty decent for predicting how many items a store will sell based on only 34 months of data.  Including some more details about the items (like category or price) could enhance this even more I'm sure.  
+Regardless, I'm happy with it.  A root mean squared error of only 1.16 is pretty decent for predicting how many items a store will sell based on only 34 months of data.  Including some more details about the items (like category or price) could enhance this even more I'm sure.  
 As my goal was to fit and test a time-series model though, I'm happy with what I achieved here.

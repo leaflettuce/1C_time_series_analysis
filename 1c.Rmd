@@ -1,12 +1,34 @@
 ---
-title: "time_series_analysis"
-output: html_document
+title: "Time Series Analysis in R"
+date: "2018-05-22 13:25"
+name: "Time Series Analysis in R"
+category: "Machine Learning"
+tags: "R, Time-series, modeling, ARIMA"
+summary: "Lately I've been looking to explore time-series modeling and to get more practice with manipulating data in R. Luckily, a dataset on Kaggle provided me the opportunity to do both of these things. Attempting to predict future sale volume of items in stores (from 1-C russian store sales dataset) gave me the chance to apply the theoretical knowledge I've been studying of time-series analysis (ARIMA in particual). Additionally, I was able to get more comfortable with dplyr and lubridate in the process."
+output:
+  html_document: default
+  pdf_document: default
 ---
 
-(SUMMARY HERE)
+Lately I've been looking to explore time-series modeling and to get more practice with manipulating data in R. Luckily, a dataset on Kaggle provided me the opportunity to do both of these things. Attempting to predict future sale volume of items in stores (from 1-C russian store sales dataset) gave me the chance to apply the theoretical knowledge I've been studying of time-series analysis (ARIMA in particual). Additionally, I was able to get more comfortable with dplyr and lubridate in the process.
+
+The variable of interest here was a daily count of sales for each item-store combo, equating to over 2 million rows of data. The process I took was to:
+
+-aggregate sales data into monthly counts (this is what Kaggle contest is looking for)
+-separate each store-item combo out into its own time-series.
+-Explore how appropriate an ARIMA model is and if differentiation is called for
+-Find a model which could generalize the data for each combo effectively
+-Run the function to predict next months sales for the store-item combo.
+
+Overall, this route of pretty effective, although final results show an ARIMA model may have been too complex for what was needed. A later run trial of exponential smoothing beat my best ARIMA model by about .15 root mean square error. Not too surprising as ARIMa models should have at least 40 points in the time-series, while these each had only 34. Additionally, many of the time-series were quite sparse, which is not the best input for ARIMA modeling. 
+
+Regardless, this was great practice, gave me a better understanding of working with time-series, and in particular how to judge stationarity and appropriateness for ARIMA.
 
 
-```{r setup, include=FALSE, eval = FALSE}
+NOTE: many of the lines are commented out.. Most of these were excluded from my final knit as compuation times were a bit excessive for some of the loops and functions I ended up using.
+
+
+```{r results = 'hide', warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(xts)
@@ -85,15 +107,17 @@ sapply(train, function(x) sum(is.na(x)))
 Love Kaggle for that.  Lets divert from the train for a second and add the next block count, year, and month to the test set.  We know it's the next year/month occuring right after the end of the train set, which is october 2015.
 
 ```{r}
-date <- as.Date("01.11.2015", "%d.%m.%Y")
 
-for (i in 1:nrow(test)){
-  test[i,4] = 35
-  test[i, 5] = 2015
-  test[i, 6] = 11
-}
+#date <- as.Date("01.11.2015", "%d.%m.%Y")
 
-colnames(test)[4:6] <- c('date_block_num', 'year', 'month')
+#for (i in 1:nrow(test)){
+#  test[i,4] = 35
+#  test[i, 5] = 2015
+#  test[i, 6] = 11
+#}
+
+
+#colnames(test)[4:6] <- c('date_block_num', 'year', 'month')
 
 ```
 
@@ -111,21 +135,21 @@ df_train <- train %>% group_by(date_block_num, shop_id, item_id, year, month) %>
 I fit fit and modeled the data based upon only the mean monthly sales per item per shop. Any NA's are filled with the median of monthly item sales throughout entire dataset... I call this the basic af model, and it's a nice one to set as a comparable to the future time-series..
 
 ```{r}
-basic <- df_train %>% group_by(shop_id, item_id) %>% 
-  summarize(mean_count = median(item_cnt_month)) 
+#basic <- df_train %>% group_by(shop_id, item_id) %>% 
+#  summarize(mean_count = median(item_cnt_month)) 
 
 
-overall_mean <- mean(basic$mean_count)
+#overall_mean <- mean(basic$mean_count)
 
-basic_test <- test %>% select(ID, shop_id, item_id)
+#basic_test <- test %>% select(ID, shop_id, item_id)
 
-basic_test <- merge(x = basic_test, y = basic, by = c("shop_id", "item_id"), all.x = TRUE)
-basic_test$mean_count[is.na(basic_test$mean_count)] <- overall_mean
+#basic_test <- merge(x = basic_test, y = basic, by = c("shop_id", "item_id"), all.x = TRUE)
+#basic_test$mean_count[is.na(basic_test$mean_count)] <- overall_mean
 
-preds = basic_test$mean_count
-sample_sub$item_cnt_month = preds
+#preds = basic_test$mean_count
+#sample_sub$item_cnt_month = preds
 
-write.csv(sample_sub, file = "D://projects/kaggle/time_series/basic_af.csv", row.names = FALSE)
+#write.csv(sample_sub, file = "D://projects/kaggle/time_series/basic_af.csv", row.names = #FALSE)
 ```
 
 So back to work on the time series.. lets figure out how to set it up by exploring one or two specific shop-item combos.
@@ -133,7 +157,7 @@ So back to work on the time series.. lets figure out how to set it up by explori
 ```{r}
 ts_train <- train %>% group_by(date_block_num, shop_id, item_id) %>% 
   summarize(item_cnt_month = sum(item_cnt_day))# %>%
-#  mutate(ts = xts(item_cnt_month, order.by = as.Date(ts_train$date)))
+  #mutate(ts = xts(item_cnt_month, order.by = as.Date(ts_train$date)))
 
 
 
@@ -205,48 +229,48 @@ pred112$pred
 Aright.. its looks good.. an estimate of very  very very close to 0. Lets find a shop-item with more sales and see how this same setup does.
 
 ```{r}
-ts_test <- subset(ts_train, ts_train$shop_id == 31 & ts_train$item_id == 20949)
+#ts_test <- subset(ts_train, ts_train$shop_id == 31 & ts_train$item_id == 20949)
 
-ts <- rnorm(34, m = 0, sd = 0)
-ts <- ts(ts, start = 2013, frequency = 12)
-
-
-for (i in 1:34){
-  if(i %in% ts_test$date_block_num){
-    j <- which(ts_test$date_block_num == i)
-    num <- ts_test[j,4]
-    ts[i] <- as.numeric(num)
-  }
-}
+#ts <- rnorm(34, m = 0, sd = 0)
+#ts <- ts(ts, start = 2013, frequency = 12)
 
 
-plot(ts)
-abline(reg = lm(ts~time(ts)))
-
-boxplot(ts~cycle(ts))
-
-adf.test(ts, alternative = "stationary", k = 0)
-adf.test(diff(ts), alternative="stationary", k=0)
-
-acf(diff(ts))
-
-pacf(diff(ts))
-
-fit011 <- arima(ts, order = c(0, 1, 1))
-
-pred011 <- predict(fit011)
+#for (i in 1:34){
+#  if(i %in% ts_test$date_block_num){
+#    j <- which(ts_test$date_block_num == i)
+#    num <- ts_test[j,4]
+#    ts[i] <- as.numeric(num)
+#  }
+#}
 
 
-ts.plot(ts, pred011$pred, lty = c(1,3))
+#plot(ts)
+#abline(reg = lm(ts~time(ts)))
 
-pred011$pred
+#boxplot(ts~cycle(ts))
+
+#adf.test(ts, alternative = "stationary", k = 0)
+#adf.test(diff(ts), alternative="stationary", k=0)
+
+#acf(diff(ts))
+
+#pacf(diff(ts))
+
+#fit011 <- arima(ts, order = c(0, 1, 1))
+
+#pred011 <- predict(fit011)
+
+
+#ts.plot(ts, pred011$pred, lty = c(1,3))
+
+#pred011$pred
 
 
 ```
 
 Alright, hard to tell is a 0 sounds right for this item.. It has no sales in the store for the past 3 months, so it may have been taken off the shelves?  lets find one with sales in the latest few months to test the model with:
 
-```{r, warning = FALSE, results = 'hide', message = FALSE}
+```{r, warning = FALSE, message = FALSE}
 ts_test <- subset(ts_train, ts_train$shop_id == 48 & ts_train$item_id == 20949)
 
 ts <- rnorm(34, m = 0, sd = 0)
@@ -294,9 +318,9 @@ ts.plot(ts, pred011$pred, lty = c(1,3))
 pred011$pred
 ```
 
-Exciting! We see sales declining slightly in the past few months in this subset, and the model accounts for that and estimates 50 items sold for the next month in the cycle.. 
+Exciting! We see sales increasing slightly in the past few months in this subset after a dip, and the model accounts for that and estimates 50 items sold for the next month in the cycle.. 
  
- I personal see both the (1, 1, 2) and the (0, 1, 1) models working pretty accurately from these quick tests.. I need to write up a function to run through the store item combos and fit the model and report it to a list.. I'll finally take the list and reorder it to the sample submission and test the fits on kaggle.
+I personal think the (1, 1, 2) ARIMA seems to fit better as a generalization if I'm looking for one to fit all possible shop-item combo's.  Speaking of, I need to write up a function to run through the store item combos and fit the model/report it to a list.. I'll finally take the list and reorder it to the sample submission and test the fits on kaggle.
  
 ```{r}
 get_preds <- function(){
@@ -339,7 +363,7 @@ get_preds <- function(){
     }
   }
 }
-get_preds()
+#get_preds()
 ```
 
 Alright, we should have a list of predictions from the ARIMA model.. Lets check a few then move them to their proper column in the sample submission from KAggle.
@@ -347,30 +371,29 @@ Alright, we should have a list of predictions from the ARIMA model.. Lets check 
 NOTE: I came back to this after the first few submissions and gave exponential smoothing a try.. SO while my ARIMA is commented out, this was the primaryt exploration I performed.Exponential smoothing was slighltly better than ARIMA- (0.1 decrease in root mean square error)!
 
 ```{r}
+#clipper<- function(preds, UB=11, LB=0) pmax( LB, pmin( preds, UB))
+#clipped_preds <- clipper(preds)
 
+#print(preds[1])
+#print(preds[100])
+#print(preds[100000])
 
-clipper<- function(preds, UB=11, LB=0) pmax( LB, pmin( preds, UB))
-clipped_preds <- clipper(preds)
-
-print(preds[1])
-print(preds[100])
-print(preds[100000])
-
-for (i in 1:nrow(sample_sub)){
-  sample_sub[i,2] <- clipped_preds[i]
-}
+#for (i in 1:nrow(sample_sub)){
+#  sample_sub[i,2] <- clipped_preds[i]
+#}
 
 #sample_sub$item_cnt_month <- round(sample_sub$item_cnt_month)
-sample_sub[1:10,]
+#sample_sub[1:10,]
 ```
 All thats left is to write it out for submission:
 ```{r}
-write.csv(sample_sub, file = "D://projects/kaggle/time_series/exp_smooth_11_clip.csv", row.names = FALSE)
+#write.csv(sample_sub, file = "D://projects/kaggle/time_series/exp_smooth_11_clip.csv", row.names = FALSE)
 ```
 
 ## Kaggle Results
 
-~40% of contestants.  I'm happy with it for my first time running a time series model. This model may also be running into trouble due to over-generalizing the auto-regressive and moving average values for each shop-item combo.. It's definately not the strongest for each individual combination. 
+Top 28% of contestants (146/531)!!.  I'm happy with it for my first time running a time series model. This model may also be running into trouble due to over-generalizing the auto-regressive and moving average values for each shop-item combo.. It's definately not the strongest for each individual combination. I think that is at least partially the reasin the exponential smoothing method performs more accurately for the data.
 
-Regardless, I'm happy with it.  A root mean squared error of only 1.16 is pretty decent for predicting how many items a store will sell based on only 34 months of data.  Including some more details about the items (like category or price) could enhance this even more I'm sure.  
-As my goal was to fit and test a time-series model though, I'm happy with what I achieved here.
+Regardless, I'm happy with my first epxlorations into time-series analysis in R.  A root mean squared error of only 1.06 is pretty decent for predicting how many items a store will sell based on only 34 months of data.  Including some more details about the items (like category or price) could possibly enhance this even more I'm sure.
+
+As my goal here was to fit and test a time-series model though, I'd say this is successful.
